@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Book Scene</title>
+<style>
+  /* 让 canvas 铺满整个窗口，没有滚动条 */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a0d04; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ① 引入 Three.js 核心库 -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<!-- ② 引入 OrbitControls（依赖 Three.js，所以必须在它后面） -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   A. 渲染器 Renderer
+   - 创建 WebGL 画布，填满窗口
+   - 开启抗锯齿、阴影、sRGB 颜色输出
+═══════════════════════════════════════════════════ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;  // sRGB 输出，颜色准确
+renderer.toneMapping = THREE.NoToneMapping;    // 不做色调映射，颜色不会变淡
+document.body.appendChild(renderer.domElement);
+
+/* ═══════════════════════════════════════════════════
+   B. 场景 Scene + 相机 Camera
+   - Scene 是所有物体的容器
+   - PerspectiveCamera: 透视相机，模拟人眼
+     参数：视野角 45°、宽高比、近裁剪面 0.1、远裁剪面 100
+═══════════════════════════════════════════════════ */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a0d04); // 深棕背景（桌面会覆盖大部分）
+
+const camera = new THREE.PerspectiveCamera(
+  35,                                          // fov 35，视野窄，书在画面中更大
+  window.innerWidth / window.innerHeight,
+  0.1,
+  100
+);
+// 拉远，书占画面约 60% 高度，四周能看到桌面
+camera.position.set(0, 12, 13);
+camera.lookAt(0, 0, 0);
+
+/* ═══════════════════════════════════════════════════
+   C. 响应窗口缩放
+═══════════════════════════════════════════════════ */
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* ═══════════════════════════════════════════════════
+   D. 灯光 Lights
+   - AmbientLight：均匀照亮全场景，模拟环境散射光
+   - DirectionalLight：平行光，模拟太阳/台灯，可产生阴影
+═══════════════════════════════════════════════════ */
+
+// 暖色环境光：给阴影处一点亮度，不要全黑
+const ambientLight = new THREE.AmbientLight(0xFFE8C0, 0.5);
+scene.add(ambientLight);
+
+// 主方向光：从左上前方 (-6, 12, 6)，产生向右下的柔和阴影
+const dirLight = new THREE.DirectionalLight(0xFFF5E0, 1.3);
+dirLight.position.set(-6, 12, 6);
+dirLight.castShadow = true;
+
+dirLight.shadow.mapSize.width  = 2048;
+dirLight.shadow.mapSize.height = 2048;
+// 阴影相机范围要能完整覆盖整本书（BW≈6.4, BH≈8.6, BD≈0.6）
+dirLight.shadow.camera.left   = -8;
+dirLight.shadow.camera.right  =  8;
+dirLight.shadow.camera.top    =  8;
+dirLight.shadow.camera.bottom = -8;
+dirLight.shadow.camera.near   = 1;
+dirLight.shadow.camera.far    = 35;
+dirLight.shadow.bias = -0.0003;
+scene.add(dirLight);
+
+// 右侧补光（冷色调），让书右侧不完全黑
+const fillLight = new THREE.DirectionalLight(0xD0E8FF, 0.25);
+fillLight.position.set(6, 4, 3);
+scene.add(fillLight);
+
+/* ═══════════════════════════════════════════════════
+   E. 木纹桌面贴图（用 Canvas 程序化生成，2048×2048 不重复）
+   - 一张大贴图铺满整个桌面，消除接缝
+   - 木纹方向沿 X 轴（水平方向）延伸，符合真实木板纹路
+═══════════════════════════════════════════════════ */
+function makeWoodTexture() {
+  // 用 2048×2048 大图，直接铺满桌面，不平铺，所以没有接缝
+  const W = 2048, H = 2048;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  // 底色：暖棕 #C8A870
+  ctx.fillStyle = '#c8a870';
+  ctx.fillRect(0, 0, W, H);
+
+  // 木纹：按列（x 方向）绘制正弦纹，纹路水平延伸
+  // 这样平行于桌面的木纹方向更自然
+  for (let x = 0; x < W; x++) {
+    const t = x / W;
+    const wave1 = Math.sin(t * Math.PI * 60 + Math.sin(t * 15) * 6) * 0.5 + 0.5;
+    const wave2 = Math.sin(t * Math.PI * 25 + 2.1) * 0.5 + 0.5;
+    const c = wave1 * 0.65 + wave2 * 0.35;
+
+    const r = 215 + c * 28 | 0;
+    const g = 162 + c * 22 | 0;
+    const b = 100 + c * 12 | 0;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(x, 0, 1, H);
+  }
+
+  // 木纹线条：长而水平的贝塞尔曲线（跨越全图宽度），避免接缝
+  for (let i = 0; i < 120; i++) {
+    const y     = Math.random() * H;
+    const alpha = 0.025 + Math.random() * 0.065;
+    ctx.strokeStyle = Math.random() > 0.5
+      ? `rgba(245, 195, 125, ${alpha})`
+      : `rgba(70,  35,  8,   ${alpha})`;
+    ctx.lineWidth = 0.6 + Math.random() * 1.8;
+    // 起点在左边缘，终点在右边缘，整条线横跨全图 → 不会有接缝
+    const cy1 = y + (Math.random() - 0.5) * 60;
+    const cy2 = y + (Math.random() - 0.5) * 60;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(W * 0.33, cy1, W * 0.66, cy2, W, y + (Math.random() - 0.5) * 20);
+    ctx.stroke();
+  }
+
+  // 细短纹（增加近看质感）
+  for (let i = 0; i < 200; i++) {
+    const x = Math.random() * W, y = Math.random() * H;
+    const len = 20 + Math.random() * 60;
+    const alpha = 0.02 + Math.random() * 0.04;
+    ctx.strokeStyle = `rgba(60, 30, 5, ${alpha})`;
+    ctx.lineWidth = 0.4 + Math.random() * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + len, y + (Math.random() - 0.5) * 4);
+    ctx.stroke();
+  }
+
+  // 光泽渐变
+  const gloss = ctx.createLinearGradient(0, 0, W, 0);
+  gloss.addColorStop(0,   'rgba(255, 220, 160, 0.08)');
+  gloss.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+  gloss.addColorStop(1,   'rgba(0,   0,   0,   0.06)');
+  ctx.fillStyle = gloss;
+  ctx.fillRect(0, 0, W, H);
+
+  const tex = new THREE.CanvasTexture(cv);
+  // 不重复平铺，直接铺满：wrapS/wrapT 保持默认 ClampToEdgeWrapping
+  // repeat 保持 (1,1) → 整张图对应整个桌面
+  tex.encoding = THREE.sRGBEncoding;
+  return tex;
+}
+
+/* ═══════════════════════════════════════════════════
+   F. 桌面 Table
+   - 一个扁平的 BoxGeometry（长方体）
+   - 贴上木纹纹理
+   - receiveShadow = true 让它接收书的阴影
+═══════════════════════════════════════════════════ */
+const woodTex  = makeWoodTexture();
+const tableGeo = new THREE.BoxGeometry(30, 0.4, 24);  // 宽 × 高 × 深
+const tableMat = new THREE.MeshStandardMaterial({
+  map:       woodTex,
+  roughness: 0.75,   // 粗糙度高 → 漫反射，不会太亮
+  metalness: 0.02,
+});
+const tableMesh = new THREE.Mesh(tableGeo, tableMat);
+tableMesh.position.y = -1.0;    // 下移，让书"坐"在桌面上
+tableMesh.receiveShadow = true;
+scene.add(tableMesh);
+
+/* ═══════════════════════════════════════════════════
+   G. 书本 Book
+   书 = 书体（长方体）+ 书脊（圆柱）+ 书页切口（右侧细条纹理）
+═══════════════════════════════════════════════════ */
+
+// ── 书体尺寸 ──
+const BW = 6.4;   // 宽度（不含书脊）
+const BH = 8.6;   // 高度（书的前后纵深，平放时为 Z 方向）
+const BD = 0.6;   // 厚度改为 0.6，更有存在感
+const SR = 0.3;   // 书脊半径 = BD/2 = 0.3
+
+// ── G1. 封面/封底：亚麻布纹贴图 ──
+// 随机长短的横竖线，透明度低，远看近色、近看有纹理
+function makeCoverTexture() {
+  const W = 512, H = 512;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  // 底色 #D8C6A8
+  ctx.fillStyle = '#D8C6A8';
+  ctx.fillRect(0, 0, W, H);
+
+  // 大量随机短横线（主纹理方向：纬线）
+  for (let i = 0; i < 2200; i++) {
+    const x     = Math.random() * W;
+    const y     = Math.random() * H;
+    const len   = 4 + Math.random() * 18;          // 随机长短
+    const alpha = 0.03 + Math.random() * 0.07;     // 低透明度
+    const dy    = (Math.random() - 0.5) * 1.2;     // 轻微抖动
+    ctx.strokeStyle = `rgba(110, 78, 38, ${alpha})`;
+    ctx.lineWidth   = 0.5 + Math.random() * 1.0;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + len, y + dy);
+    ctx.stroke();
+  }
+
+  // 大量随机短竖线（经线）
+  for (let i = 0; i < 1800; i++) {
+    const x     = Math.random() * W;
+    const y     = Math.random() * H;
+    const len   = 3 + Math.random() * 14;
+    const alpha = 0.03 + Math.random() * 0.06;
+    const dx    = (Math.random() - 0.5) * 1.0;
+    ctx.strokeStyle = `rgba(95, 65, 30, ${alpha})`;
+    ctx.lineWidth   = 0.4 + Math.random() * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + dx, y + len);
+    ctx.stroke();
+  }
+
+  // 极淡噪点（纤维感）
+  for (let k = 0; k < 5000; k++) {
+    const px = Math.random() * W, py = Math.random() * H;
+    const alpha = 0.015 + Math.random() * 0.035;
+    ctx.fillStyle = Math.random() > 0.5
+      ? `rgba(90, 60, 25, ${alpha})`
+      : `rgba(220, 195, 155, ${alpha})`;
+    ctx.fillRect(px, py, 1, 1);
+  }
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.encoding = THREE.sRGBEncoding;
+  return tex;
+}
+
+// ── G2. 四个侧面：纸张边缘纹理（米白 + 细横线，像一页页纸叠在一起） ──
+function makePageEdgeTexture() {
+  // W = 厚度方向（书平放，这个面是竖的），H = 书的高度方向
+  // 用细密横线模拟页面叠层
+  const W = 128, H = 1024;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  // 底色米白 #F3EBDC
+  ctx.fillStyle = '#F3EBDC';
+  ctx.fillRect(0, 0, W, H);
+
+  // 细密横线：每隔约 2px 一条，深浅随机，模拟纸页
+  for (let y = 0; y < H; y++) {
+    const t = y / H;
+    // 轻微的整体色调变化（越往下越暖黄）
+    const base_r = 243 - t * 8;
+    const base_g = 235 - t * 12;
+    const base_b = 220 - t * 18;
+    // 每隔约 2px 一条深线（页间缝隙）
+    const isLine = (y % 2 === 0);
+    const darken = isLine ? -(6 + Math.random() * 8) : 0;
+    const noise  = (Math.random() - 0.5) * 4;
+    ctx.fillStyle = `rgb(${base_r + darken + noise | 0},${base_g + darken + noise | 0},${base_b + darken + noise | 0})`;
+    ctx.fillRect(0, y, W, 1);
+  }
+
+  // 偶尔有一条稍深的线（书页间的阴影）
+  for (let i = 0; i < 60; i++) {
+    const y = Math.random() * H;
+    ctx.strokeStyle = `rgba(160, 130, 100, ${0.08 + Math.random() * 0.12})`;
+    ctx.lineWidth = 0.5 + Math.random() * 0.8;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.encoding = THREE.sRGBEncoding;
+  return tex;
+}
+
+const coverTex    = makeCoverTexture();
+const pageEdgeTex = makePageEdgeTexture();
+
+// 侧面纸张材质（+Z 前 / -Z 后），用纸张边缘贴图
+const pageSideMat = new THREE.MeshStandardMaterial({
+  map:       pageEdgeTex,
+  roughness: 0.65,
+  metalness: 0.0,
+});
+
+// ── G3. 书体（BoxGeometry，六个面用不同材质）──
+// BoxGeometry 六个面顺序：+X右、-X左、+Y上、-Y下、+Z前、-Z后
+const bookGeo = new THREE.BoxGeometry(BW, BD, BH);
+const bookMats = [
+  // +X 右侧：书页切口（页面叠层细横线）
+  new THREE.MeshStandardMaterial({ map: pageEdgeTex, roughness: 0.65 }),
+  // -X 左侧：紧贴书脊，砖红色
+  new THREE.MeshStandardMaterial({ color: 0xB4532F, roughness: 0.9 }),
+  // +Y 上面：亚麻封面
+  new THREE.MeshStandardMaterial({ map: coverTex, roughness: 0.75 }),
+  // -Y 下面：亚麻封底
+  new THREE.MeshStandardMaterial({ map: coverTex, roughness: 0.75 }),
+  // +Z 前侧面：纸张边缘（有细横线）
+  pageSideMat,
+  // -Z 后侧面：纸张边缘
+  pageSideMat,
+];
+const bookMesh = new THREE.Mesh(bookGeo, bookMats);
+bookMesh.position.set(BW / 2 + SR, 0, 0);
+bookMesh.castShadow    = true;
+bookMesh.receiveShadow = true;
+
+// ── G4. 书脊（CylinderGeometry）──
+// 半径 SR=0.3（等于 BD/2），长度 BH=8.6，沿 Z 轴延伸（rotation.x = 90°）
+const spineGeo = new THREE.CylinderGeometry(SR, SR, BH, 32);
+const spineMat = new THREE.MeshStandardMaterial({
+  color:     0xB4532F,  // 砖红色，明显
+  roughness: 0.9,       // 高粗糙度，漫反射，颜色饱满
+  metalness: 0.0,
+});
+const spineMesh = new THREE.Mesh(spineGeo, spineMat);
+spineMesh.rotation.x = Math.PI / 2;  // 躺平沿 Z 方向延伸
+spineMesh.position.set(0, 0, 0);
+spineMesh.castShadow    = true;
+spineMesh.receiveShadow = true;
+
+// ── G5. 整体 Group，居中放在桌面上 ──
+const bookGroup = new THREE.Group();
+bookGroup.add(spineMesh);
+bookGroup.add(bookMesh);
+
+// 整体向左移，让整本书（书脊+书体）的视觉中心在世界原点
+bookGroup.position.x = -(BW / 2 + SR);
+// 桌面上表面 y = -1.0 + 0.4/2 = -0.8；书底面 = y_center - BD/2，要等于 -0.8
+// 所以 y_center = -0.8 + BD/2 = -0.8 + 0.3 = -0.5
+bookGroup.position.y = -0.8 + BD / 2;
+
+scene.add(bookGroup);
+
+/* ═══════════════════════════════════════════════════
+   H. OrbitControls 轨道控制器
+   - 允许用鼠标/触摸拖动视角和缩放
+   - 通过限制角度，防止翻到桌子底部或过度侧转
+═══════════════════════════════════════════════════ */
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping  = true;      // 惯性阻尼，拖动更顺滑
+controls.dampingFactor  = 0.07;
+controls.enablePan      = false;     // 禁用平移（只能旋转+缩放）
+
+// 俯仰角限制（防止看到桌面底部 / 过于平视）
+controls.minPolarAngle  = 0.15;      // 最小仰角（接近俯视）
+controls.maxPolarAngle  = 0.72;      // 最大仰角（约 41°，不会太平）
+
+// 水平旋转限制（±0.6 弧度 ≈ ±34°）
+controls.minAzimuthAngle = -0.6;
+controls.maxAzimuthAngle =  0.6;
+
+// 缩放距离限制
+controls.minDistance = 5;
+controls.maxDistance = 18;
+
+controls.target.set(0, 0, 0);       // 轨道中心指向场景原点（书的中心）
+controls.update();
+
+/* ═══════════════════════════════════════════════════
+   I. 渲染循环 Render Loop
+   - requestAnimationFrame 在每帧调用 animate()
+   - controls.update() 处理阻尼动画
+   - renderer.render() 把场景渲染到 canvas
+═══════════════════════════════════════════════════ */
+function animate() {
+  requestAnimationFrame(animate);  // 注册下一帧
+  controls.update();               // 更新惯性阻尼
+  renderer.render(scene, camera);  // 渲染
+}
+
+animate(); // 启动循环
+</script>
+</body>
+</html>

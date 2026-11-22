@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>异乡厨房 · 中餐家常食谱</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:"STSong","SimSun","华文宋体",Georgia,serif;overflow:hidden}
+
+body{
+  background:#1a0800;
+  background-image:radial-gradient(ellipse 100% 80% at 50% 0%,#4a1800,transparent 65%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;
+}
+
+/* ═══ SCENE ═══ */
+.scene{
+  perspective:2200px;
+  width:min(820px,96vw);
+  position:relative;
+}
+
+/* ═══ BOOK SHELL ═══ */
+.book-shell{
+  position:relative;
+  width:100%;
+  /* 2:3 ratio approx */
+  padding-bottom:66%;
+  transform-style:preserve-3d;
+  transform:rotateX(8deg);
+  filter:drop-shadow(0 50px 80px rgba(0,0,0,.7)) drop-shadow(0 20px 30px rgba(0,0,0,.5));
+  transition:transform .6s ease;
+}
+.book-shell:hover{transform:rotateX(4deg) translateY(-8px);}
+
+/* ═══ SPINE ═══ */
+.book-spine-3d{
+  position:absolute;
+  left:0; top:0; bottom:0; width:28px;
+  background:linear-gradient(180deg,#8B2500 0%,#c0392b 30%,#96281b 60%,#7a1a06 100%);
+  transform-origin:right center;
+  transform:rotateY(-90deg) translateX(-14px);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:inset -3px 0 8px rgba(0,0,0,.4);
+  border-radius:3px 0 0 3px;
+}
+.spine-text{
+  writing-mode:vertical-rl;font-size:.62rem;color:rgba(255,230,160,.8);
+  letter-spacing:.12em;text-shadow:0 1px 3px rgba(0,0,0,.5);
+}
+
+/* ═══ BACK COVER ═══ */
+.book-back-cover{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,#5a1a00,#8b2500,#c0392b);
+  border-radius:0 6px 6px 0;
+  transform:translateZ(-6px);
+}
+
+/* ═══ PAGES BLOCK (right edge) ═══ */
+.pages-edge{
+  position:absolute;
+  right:-16px;top:3px;bottom:3px;width:16px;
+  background:repeating-linear-gradient(to bottom,#f5ead0 0,#f5ead0 2px,#e8d8b8 2px,#e8d8b8 4px);
+  border-radius:0 3px 3px 0;
+  box-shadow:3px 0 8px rgba(0,0,0,.3);
+}
+
+/* ═══ PAGE CONTAINER ═══ */
+.pages-container{
+  position:absolute;inset:0;
+  overflow:hidden;border-radius:0 6px 6px 0;
+}
+
+/* ═══ SINGLE PAGE (fills entire book face) ═══ */
+.page{
+  position:absolute;inset:0;
+  display:grid;grid-template-columns:1fr 1fr;
+  transform-origin:left center;
+  transform-style:preserve-3d;
+  opacity:0;pointer-events:none;
+  transition:none;
+}
+.page.active{opacity:1;pointer-events:all;z-index:5;}
+
+/* ── PAGE FLIP ANIMATION ── */
+.page.flip-out{
+  animation:flipOut .55s cubic-bezier(.4,0,.2,1) forwards;
+  z-index:10;pointer-events:none;
+}
+.page.flip-in{
+  animation:flipIn .55s cubic-bezier(.4,0,.2,1) forwards;
+  z-index:8;pointer-events:none;
+}
+.page.flip-back-out{
+  animation:flipBackOut .55s cubic-bezier(.4,0,.2,1) forwards;
+  z-index:10;pointer-events:none;
+}
+.page.flip-back-in{
+  animation:flipBackIn .55s cubic-bezier(.4,0,.2,1) forwards;
+  z-index:8;pointer-events:none;
+}
+@keyframes flipOut{
+  from{transform:rotateY(0deg);opacity:1;}
+  to{transform:rotateY(-25deg);opacity:0;}
+}
+@keyframes flipIn{
+  from{transform:rotateY(25deg);opacity:0;}
+  to{transform:rotateY(0deg);opacity:1;}
+}
+@keyframes flipBackOut{
+  from{transform:rotateY(0deg);opacity:1;}
+  to{transform:rotateY(25deg);opacity:0;}
+}
+@keyframes flipBackIn{
+  from{transform:rotateY(-25deg);opacity:0;}
+  to{transform:rotateY(0deg);opacity:1;}
+}
+
+/* ═══ LEFT HALF (illustration) ═══ */
+.page-left-half{
+  background:linear-gradient(160deg,#fdf8ef 0%,#f5e8cc 100%);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  border-right:1px solid rgba(180,140,80,.25);
+  box-shadow:inset -8px 0 20px rgba(140,80,20,.08);
+}
+/* Paper texture lines */
+.page-left-half::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(180,140,80,.06) 27px,rgba(180,140,80,.06) 28px);
+  pointer-events:none;
+}
+/* Page fold shadow */
+.page-left-half::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;width:30px;
+  background:linear-gradient(to left,rgba(0,0,0,.08),transparent);
+  pointer-events:none;
+}
+
+/* ═══ RIGHT HALF (text) ═══ */
+.page-right-half{
+  background:linear-gradient(160deg,#fdf5e8 0%,#f8edd5 100%);
+  display:flex;flex-direction:column;
+  padding:28px 28px 20px 24px;
+  position:relative;overflow:hidden;
+}
+.page-right-half::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(180,140,80,.06) 27px,rgba(180,140,80,.06) 28px);
+  pointer-events:none;
+}
+
+/* ═══ COVER PAGE (special) ═══ */
+.page.cover-page .page-left-half{
+  background:linear-gradient(145deg,#8B2500 0%,#c0392b 40%,#96281b 100%);
+}
+.page.cover-page .page-right-half{
+  background:linear-gradient(145deg,#7a1a06 0%,#a02508 40%,#8b1a04 100%);
+  align-items:center;justify-content:center;text-align:center;
+}
+
+/* ═══ ILLUSTRATION AREA ═══ */
+.illus-wrap{
+  width:88%;aspect-ratio:1/1;
+  position:relative;display:flex;align-items:center;justify-content:center;
+  filter:drop-shadow(0 8px 20px rgba(100,40,0,.2));
+}
+.illus-wrap svg{width:100%;height:100%;}
+
+/* ═══ RECIPE TEXT SIDE ═══ */
+.recipe-dish-name{
+  font-size:clamp(1.5rem,3.5vw,2.1rem);
+  color:#7a1a06;letter-spacing:.08em;line-height:1.1;
+  margin-bottom:4px;
+}
+.recipe-category-tag{
+  display:inline-block;background:#c0392b;color:white;
+  font-size:.68rem;padding:2px 10px;border-radius:12px;
+  letter-spacing:.08em;margin-bottom:12px;
+}
+.recipe-divider{
+  height:1.5px;
+  background:linear-gradient(90deg,#c0392b,rgba(192,57,43,.1));
+  margin-bottom:14px;
+}
+.recipe-meta-row{
+  display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;
+}
+.meta-tag{
+  background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);
+  border-radius:16px;padding:3px 10px;font-size:.72rem;color:#6b4226;
+}
+.section-label{
+  font-size:.7rem;color:#c0392b;letter-spacing:.12em;
+  font-weight:700;margin-bottom:6px;margin-top:12px;
+}
+.ing-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px;}
+.ing-chip{
+  background:white;border:1px solid #e0cfb0;
+  border-radius:10px;padding:2px 9px;font-size:.7rem;color:#5a3e28;
+}
+.steps-list{list-style:none;margin-top:4px;}
+.steps-list li{
+  display:flex;gap:8px;font-size:.72rem;color:#6b4226;
+  line-height:1.55;margin-bottom:7px;cursor:pointer;
+  padding:5px 7px;border-radius:7px;transition:background .15s;
+  border:1px solid transparent;
+}
+.steps-list li:hover{background:rgba(192,57,43,.05);border-color:rgba(192,57,43,.12);}
+.steps-list li.done{background:rgba(76,175,80,.07);border-color:rgba(76,175,80,.2);}
+.step-circle{
+  min-width:20px;height:20px;border-radius:50%;
+  background:#c0392b;color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.62rem;font-weight:700;flex-shrink:0;margin-top:1px;
+  transition:background .2s;
+}
+.steps-list li.done .step-circle{background:#4caf50;}
+.tip-block{
+  margin-top:auto;padding:8px 10px;
+  background:rgba(201,147,58,.1);border-left:2.5px solid #c9933a;
+  border-radius:0 6px 6px 0;font-size:.68rem;color:#6b4226;line-height:1.5;
+}
+.tip-label{color:#c9933a;font-weight:700;margin-right:4px;}
+
+/* progress bar */
+.prog-wrap{height:3px;background:rgba(192,57,43,.12);border-radius:2px;margin-bottom:10px;}
+.prog-fill{height:100%;background:#c0392b;border-radius:2px;transition:width .4s ease;}
+
+/* ═══ COVER CONTENT ═══ */
+.cover-title-cn{
+  font-size:clamp(2rem,5vw,3.2rem);
+  color:#f0c060;text-shadow:0 2px 20px rgba(240,192,96,.4);
+  letter-spacing:.15em;line-height:1.1;margin-bottom:8px;
+}
+.cover-title-sub{color:rgba(240,192,96,.7);font-size:.9rem;letter-spacing:.2em;margin-bottom:28px;}
+.cover-ornament{margin:16px 0;opacity:.7;}
+.cover-desc{color:rgba(255,220,160,.6);font-size:.78rem;letter-spacing:.1em;line-height:1.8;}
+.cover-btn{
+  margin-top:28px;padding:10px 28px;
+  background:rgba(240,192,96,.18);border:1.5px solid rgba(240,192,96,.5);
+  color:#f0c060;border-radius:24px;cursor:pointer;font-family:inherit;
+  font-size:.88rem;letter-spacing:.1em;
+  transition:all .25s;
+}
+.cover-btn:hover{background:rgba(240,192,96,.32);transform:translateY(-2px);}
+
+/* Cover left illustration */
+.cover-illus-bg{
+  width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.cover-illus-bg::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(255,200,80,.12),transparent 70%);
+}
+
+/* ═══ NAVIGATION ═══ */
+.nav-bar{
+  display:flex;align-items:center;justify-content:center;gap:20px;
+  margin-top:22px;position:relative;z-index:20;
+}
+.nav-btn{
+  width:48px;height:48px;border-radius:50%;
+  background:rgba(255,220,120,.12);border:1.5px solid rgba(240,192,96,.35);
+  color:#f0c060;font-size:1.3rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;user-select:none;
+}
+.nav-btn:hover:not(:disabled){background:rgba(240,192,96,.25);transform:scale(1.1);}
+.nav-btn:disabled{opacity:.25;cursor:not-allowed;}
+.page-indicator{
+  color:rgba(240,192,96,.6);font-size:.8rem;letter-spacing:.12em;min-width:100px;text-align:center;
+}
+.toc-btn{
+  padding:7px 18px;border-radius:20px;
+  background:rgba(255,220,120,.1);border:1.5px solid rgba(240,192,96,.3);
+  color:rgba(240,192,96,.7);font-size:.78rem;cursor:pointer;font-family:inherit;
+  letter-spacing:.08em;transition:all .2s;
+}
+.toc-btn:hover{background:rgba(240,192,96,.2);color:#f0c060;}
+
+/* ═══ TOC OVERLAY ═══ */
+.toc-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
+  z-index:100;display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.toc-overlay.open{opacity:1;pointer-events:all;}
+.toc-panel{
+  background:linear-gradient(145deg,#fdf8ef,#f5e8cc);
+  border-radius:16px;padding:28px 32px;
+  width:min(500px,90vw);max-height:80vh;overflow-y:auto;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);
+  transform:scale(.9) translateY(20px);
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.toc-overlay.open .toc-panel{transform:scale(1) translateY(0);}
+.toc-title{font-size:1.4rem;color:#7a1a06;letter-spacing:.08em;margin-bottom:4px;}
+.toc-sub{font-size:.75rem;color:#9b6a40;margin-bottom:16px;letter-spacing:.1em;}
+.toc-divider{height:1px;background:rgba(192,57,43,.2);margin-bottom:14px;}
+.toc-item{
+  display:flex;align-items:center;gap:12px;padding:9px 10px;
+  border-radius:10px;cursor:pointer;transition:background .15s;margin-bottom:4px;
+  border:1px solid transparent;
+}
+.toc-item:hover{background:rgba(192,57,43,.06);border-color:rgba(192,57,43,.12);}
+.toc-num{
+  width:28px;height:28px;border-radius:50%;background:#c0392b;
+  color:white;display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;font-weight:700;flex-shrink:0;
+}
+.toc-name{font-size:.92rem;color:#2c1a0e;letter-spacing:.05em;flex:1;}
+.toc-meta{font-size:.7rem;color:#9b6a40;}
+.toc-close{
+  position:absolute;top:16px;right:16px;
+  width:30px;height:30px;border-radius:50%;background:rgba(192,57,43,.1);
+  border:none;cursor:pointer;font-size:1rem;color:#7a1a06;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ═══ TOAST ═══ */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:#2c1a0e;color:#f0c060;padding:9px 22px;
+  border-radius:24px;font-size:.85rem;letter-spacing:.05em;
+  box-shadow:0 6px 24px rgba(0,0,0,.45);z-index:300;
+  pointer-events:none;transition:transform .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* Page number bottom */
+.page-num-stamp{
+  position:absolute;bottom:10px;font-size:.62rem;color:rgba(100,60,30,.35);letter-spacing:.1em;
+}
+.pn-left{left:16px;}.pn-right{right:16px;}
+
+/* Swipe hint */
+.swipe-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  font-size:.65rem;color:rgba(192,57,43,.35);letter-spacing:.08em;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<!-- TOC OVERLAY -->
+<div class="toc-overlay" id="tocOverlay" onclick="handleTocBg(event)">
+  <div class="toc-panel" style="position:relative;">
+    <button class="toc-close" onclick="closeToc()">✕</button>
+    <div class="toc-title">食谱目录</div>
+    <div class="toc-sub">共 12 道家常菜 · 点击直接跳转</div>
+    <div class="toc-divider"></div>
+    <div id="tocList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="scene">
+  <div class="book-shell" id="bookShell">
+    <!-- Spine -->
+    <div class="book-spine-3d"><span class="spine-text">异乡厨房 · 中餐家常食谱</span></div>
+    <!-- Back cover -->
+    <div class="book-back-cover"></div>
+    <!-- Pages edge -->
+    <div class="pages-edge"></div>
+    <!-- Pages -->
+    <div class="pages-container" id="pagesContainer"></div>
+  </div>
+
+  <div class="nav-bar">
+    <button class="nav-btn" id="btnPrev" onclick="turnPage(-1)" disabled>‹</button>
+    <span class="page-indicator" id="pageIndicator">封面</span>
+    <button class="nav-btn" id="btnNext" onclick="turnPage(1)">›</button>
+    <button class="toc-btn" onclick="openToc()">目录</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   WATERCOLOUR-STYLE SVG ILLUSTRATIONS
+   Each returns an <svg> string.
+══════════════════════════════════════ */
+
+/* Shared: Chinese blue-and-white porcelain plate */
+function plateSVG(innerContent, cx=160, cy=165, r=130){
+  // scalloped edge
+  let scallops='';
+  for(let i=0;i<24;i++){
+    const a=i/24*Math.PI*2, a2=(i+.5)/24*Math.PI*2;
+    const r1=r+2, r2=r-6;
+    scallops+=`<circle cx="${cx+Math.cos(a)*r1}" cy="${cy+Math.sin(a)*r1}" r="11" fill="#f8f4ee"/>`;
+  }
+  // blue floral ring decoration
+  let florals='';
+  for(let i=0;i<8;i++){
+    const a=i/8*Math.PI*2;
+    const fx=cx+Math.cos(a)*(r-20), fy=cy+Math.sin(a)*(r-20);
+    florals+=`
+      <circle cx="${fx}" cy="${fy}" r="7" fill="none" stroke="#6b8fc7" stroke-width="1.2" opacity=".7"/>
+      <circle cx="${fx}" cy="${fy}" r="3.5" fill="#6b8fc7" opacity=".5"/>
+      <line x1="${fx+Math.cos(a-1.2)*8}" y1="${fy+Math.sin(a-1.2)*8}" x2="${fx+Math.cos(a-1.2)*14}" y2="${fy+Math.sin(a-1.2)*14}" stroke="#6b8fc7" stroke-width="1" opacity=".5"/>
+      <line x1="${fx+Math.cos(a+1.2)*8}" y1="${fy+Math.sin(a+1.2)*8}" x2="${fx+Math.cos(a+1.2)*14}" y2="${fy+Math.sin(a+1.2)*14}" stroke="#6b8fc7" stroke-width="1" opacity=".5"/>
+      <ellipse cx="${fx+Math.cos(a-1.2)*16}" cy="${fy+Math.sin(a-1.2)*16}" rx="3" ry="2" fill="#8aadd8" opacity=".45" transform="rotate(${a*180/Math.PI-70} ${fx+Math.cos(a-1.2)*16} ${fy+Math.sin(a-1.2)*16})"/>
+      <ellipse cx="${fx+Math.cos(a+1.2)*16}" cy="${fy+Math.sin(a+1.2)*16}" rx="3" ry="2" fill="#8aadd8" opacity=".45" transform="rotate(${a*180/Math.PI+70} ${fx+Math.cos(a+1.2)*16} ${fy+Math.sin(a+1.2)*16})"/>`;
+  }
+  // vine lines between florals
+  let vines='';
+  for(let i=0;i<8;i++){
+    const a1=(i+.1)/8*Math.PI*2, a2=(i+.9)/8*Math.PI*2;
+    const r0=r-18;
+    vines+=`<path d="M${cx+Math.cos(a1)*r0} ${cy+Math.sin(a1)*r0} Q${cx+Math.cos((a1+a2)/2)*(r0-8)} ${cy+Math.sin((a1+a2)/2)*(r0-8)} ${cx+Math.cos(a2)*r0} ${cy+Math.sin(a2)*r0}" fill="none" stroke="#6b8fc7" stroke-width=".9" opacity=".45"/>`;
+  }
+  return`<svg viewBox="0 0 320 330" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="plateGrad" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#fffef9"/>
+      <stop offset="100%" stop-color="#f0ead8"/>
+    </radialGradient>
+    <filter id="wc" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="wc2" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <clipPath id="plateClip"><circle cx="${cx}" cy="${cy}" r="${r-24}"/></clipPath>
+  </defs>
+  <!-- scalloped back -->
+  ${scallops}
+  <!-- plate base -->
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#plateGrad)" filter="url(#wc)"/>
+  <!-- rim ring -->
+  <circle cx="${cx}" cy="${cy}" r="${r-6}" fill="none" stroke="#b8cce4" stroke-width="2" opacity=".6"/>
+  <circle cx="${cx}" cy="${cy}" r="${r-10}" fill="none" stroke="#8aadd8" stroke-width=".8" opacity=".4"/>
+  <!-- florals -->
+  ${florals}
+  ${vines}
+  <!-- inner plate surface -->
+  <circle cx="${cx}" cy="${cy}" r="${r-24}" fill="#fffdf5" opacity=".5"/>
+  <!-- food content -->
+  <g clip-path="url(#plateClip)" filter="url(#wc2)">${innerContent}</g>
+  <!-- shine -->
+  <ellipse cx="${cx-28}" cy="${cy-30}" rx="22" ry="12" fill="white" opacity=".18" transform="rotate(-30 ${cx-28} ${cy-30})"/>
+</svg>`;
+}
+
+/* ── 番茄炒鸡蛋 ── */
+function svgTomato(){
+  return plateSVG(`
+    <!-- sauce base -->
+    <ellipse cx="160" cy="168" rx="105" ry="85" fill="#e85520" opacity=".75"/>
+    <ellipse cx="155" cy="162" rx="85" ry="68" fill="#f06030" opacity=".6"/>
+    <!-- tomato wedges -->
+    <path d="M120 140 Q105 125 125 118 Q148 112 158 130 Q168 148 148 155 Z" fill="#e53e1e" opacity=".9"/>
+    <path d="M182 150 Q195 138 205 148 Q212 162 198 170 Q184 176 178 162 Z" fill="#d93319" opacity=".88"/>
+    <path d="M130 180 Q118 170 122 158 Q128 144 142 148 Q155 154 152 168 Q148 182 134 182 Z" fill="#e84520" opacity=".85"/>
+    <path d="M165 185 Q178 180 185 190 Q188 202 176 206 Q162 208 158 196 Z" fill="#d63015" opacity=".82"/>
+    <path d="M105 160 Q96 150 102 140 Q110 128 122 134 Q130 142 124 155 Z" fill="#e03a1a" opacity=".78"/>
+    <!-- tomato seeds -->
+    <ellipse cx="134" cy="134" rx="3" ry="4" fill="#f9a825" opacity=".8"/>
+    <ellipse cx="145" cy="130" rx="2" ry="3" fill="#f9a825" opacity=".7"/>
+    <ellipse cx="192" cy="156" rx="3" ry="4" fill="#f9a825" opacity=".75"/>
+    <ellipse cx="174" cy="196" rx="2" ry="3" fill="#f9a825" opacity=".7"/>
+    <!-- egg blobs -->
+    <path d="M145 145 Q158 136 170 145 Q182 156 174 168 Q164 178 150 170 Q138 160 145 145Z" fill="#f9e040" opacity=".88"/>
+    <path d="M168 155 Q182 148 192 158 Q198 170 188 178 Q176 184 168 174 Q160 164 168 155Z" fill="#f5d820" opacity=".85"/>
+    <path d="M120 165 Q132 158 142 168 Q148 180 138 186 Q126 190 118 180 Q112 170 120 165Z" fill="#fce838" opacity=".82"/>
+    <path d="M148 180 Q158 174 165 183 Q168 194 158 198 Q146 200 142 190 Q140 182 148 180Z" fill="#f9df30" opacity=".78"/>
+    <path d="M105 148 Q114 140 122 148 Q128 158 120 165 Q110 170 105 160 Q100 152 105 148Z" fill="#fbe835" opacity=".75"/>
+    <!-- scallion garnish -->
+    <ellipse cx="150" cy="152" rx="4" ry="2.5" fill="#4a7c2f" opacity=".9"/>
+    <ellipse cx="162" cy="148" rx="3.5" ry="2" fill="#5a9035" opacity=".85"/>
+    <ellipse cx="145" cy="162" rx="3" ry="2" fill="#4a7c2f" opacity=".8"/>
+    <ellipse cx="170" cy="158" rx="4" ry="2.5" fill="#538030" opacity=".85"/>
+    <ellipse cx="155" cy="170" rx="3.5" ry="2" fill="#4a7c2f" opacity=".75"/>
+    <ellipse cx="138" cy="155" rx="3" ry="2" fill="#5a9035" opacity=".8"/>
+    <!-- highlights -->
+    <ellipse cx="138" cy="140" rx="8" ry="5" fill="white" opacity=".2" transform="rotate(-20 138 140)"/>
+    <ellipse cx="186" cy="150" rx="6" ry="4" fill="white" opacity=".2" transform="rotate(15 186 150)"/>
+  `);
+}
+
+/* ── 红烧肉 ── */
+function svgBraisedPork(){
+  return plateSVG(`
+    <!-- sauce pool -->
+    <ellipse cx="160" cy="168" rx="102" ry="80" fill="#6b1a04" opacity=".6"/>
+    <ellipse cx="158" cy="165" rx="88" ry="68" fill="#8b2200" opacity=".5"/>
+    <!-- pork blocks -->
+    <rect x="92" y="138" width="52" height="44" rx="8" fill="url(#pk1)" opacity=".95"/>
+    <rect x="150" y="128" width="50" height="42" rx="8" fill="url(#pk2)" opacity=".92"/>
+    <rect x="108" y="183" width="48" height="40" rx="8" fill="url(#pk3)" opacity=".90"/>
+    <rect x="162" y="175" width="46" height="38" rx="8" fill="url(#pk4)" opacity=".88"/>
+    <!-- fat layers on blocks -->
+    <rect x="92" y="152" width="52" height="8" rx="2" fill="rgba(255,220,180,.55)" opacity=".8"/>
+    <rect x="150" y="145" width="50" height="7" rx="2" fill="rgba(255,220,180,.5)" opacity=".75"/>
+    <rect x="108" y="197" width="48" height="7" rx="2" fill="rgba(255,220,180,.5)" opacity=".7"/>
+    <rect x="162" y="188" width="46" height="6" rx="2" fill="rgba(255,220,180,.45)" opacity=".65"/>
+    <!-- sauce drips -->
+    <path d="M100 182 Q96 192 100 198" fill="none" stroke="#5a1200" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <path d="M198 170 Q204 182 200 190" fill="none" stroke="#5a1200" stroke-width="3.5" stroke-linecap="round" opacity=".45"/>
+    <!-- shine on meat -->
+    <ellipse cx="110" cy="146" rx="12" ry="6" fill="rgba(255,180,80,.3)" transform="rotate(-15 110 146)"/>
+    <ellipse cx="168" cy="136" rx="10" ry="5" fill="rgba(255,180,80,.25)" transform="rotate(10 168 136)"/>
+    <defs>
+      <linearGradient id="pk1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#8B2500"/><stop offset="50%" stop-color="#c0392b"/><stop offset="100%" stop-color="#e08060"/>
+      </linearGradient>
+      <linearGradient id="pk2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#7a1a00"/><stop offset="50%" stop-color="#b03020"/><stop offset="100%" stop-color="#d87050"/>
+      </linearGradient>
+      <linearGradient id="pk3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#8a2200"/><stop offset="50%" stop-color="#ba3525"/><stop offset="100%" stop-color="#de7858"/>
+      </linearGradient>
+      <linearGradient id="pk4" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#821e00"/><stop offset="50%" stop-color="#b22818"/><stop offset="100%" stop-color="#d87050"/>
+      </linearGradient>
+    </defs>
+  `);
+}
+
+/* ── 宫保鸡丁 ── */
+function svgGongbao(){
+  return plateSVG(`
+    <!-- sauce -->
+    <ellipse cx="160" cy="165" rx="104" ry="82" fill="#c05020" opacity=".55"/>
+    <!-- chicken cubes -->
+    ${[{x:105,y:142},{x:135,y:132},{x:162,y:138},{x:188,y:145},{x:118,y:168},{x:148,y:160},{x:175,y:162},{x:135,y:188},{x:165,y:182}].map(p=>`
+      <rect x="${p.x}" y="${p.y}" width="22" height="18" rx="5" fill="url(#ck)" opacity="${.85+Math.random()*.1}"/>
+      <rect x="${p.x+2}" y="${p.y+2}" width="8" height="4" rx="2" fill="rgba(255,230,180,.4)"/>`).join('')}
+    <!-- peppers -->
+    ${[{x:98,y:150,r:-30},{x:195,y:142,r:25},{x:112,y:188,r:15},{x:200,y:178,r:-20}].map(p=>`
+      <rect x="${p.x}" y="${p.y}" width="9" height="24" rx="4" fill="#c0392b" opacity=".9" transform="rotate(${p.r} ${p.x+4.5} ${p.y+12})"/>
+      <ellipse cx="${p.x+4.5}" cy="${p.y}" rx="3" ry="2" fill="#d4512c" opacity=".7" transform="rotate(${p.r} ${p.x+4.5} ${p.y+12})"/>`).join('')}
+    <!-- peanuts -->
+    ${[{x:128,y:148},{x:155,y:144},{x:178,y:155},{x:140,y:175},{x:170,y:195}].map(p=>`
+      <ellipse cx="${p.x}" cy="${p.y}" rx="8" ry="6" fill="#c8933f" opacity=".9"/>
+      <ellipse cx="${p.x}" cy="${p.y}" rx="5" ry="3.5" fill="#d4a850" opacity=".6"/>
+      <line x1="${p.x-6}" y1="${p.y}" x2="${p.x+6}" y2="${p.y}" stroke="#8b5e2a" stroke-width=".8" opacity=".6"/>`).join('')}
+    <!-- scallion -->
+    ${[{x:145,y:155},{x:162,y:168},{x:132,y:180}].map(p=>`
+      <ellipse cx="${p.x}" cy="${p.y}" rx="4" ry="2.5" fill="#4a7c2f" opacity=".85"/>`).join('')}
+    <defs>
+      <linearGradient id="ck" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#f5d8a0"/><stop offset="60%" stop-color="#d4a04a"/><stop offset="100%" stop-color="#c08a30"/>
+      </linearGradient>
+    </defs>
+  `);
+}
+
+/* ── 麻婆豆腐 (in a bowl) ── */
+function svgMapo(){
+  // Different: use a bowl instead of plate
+  return `<svg viewBox="0 0 320 330" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bowlG" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#d44020"/><stop offset="100%" stop-color="#8b1a06"/>
+    </radialGradient>
+    <radialGradient id="souG" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#e05020"/><stop offset="100%" stop-color="#c03010"/>
+    </radialGradient>
+    <filter id="wc2b"><feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4"/></filter>
+    <clipPath id="bowlClip"><ellipse cx="160" cy="175" rx="118" ry="88"/></clipPath>
+  </defs>
+  <!-- bowl outer -->
+  <ellipse cx="160" cy="210" rx="128" ry="30" fill="#6a1a06" opacity=".5"/>
+  <path d="M32 148 Q32 290 160 300 Q288 290 288 148 Z" fill="url(#bowlG)"/>
+  <!-- bowl rim -->
+  <ellipse cx="160" cy="148" rx="128" ry="22" fill="#b02808"/>
+  <ellipse cx="160" cy="148" rx="118" ry="18" fill="#c03010"/>
+  <ellipse cx="160" cy="148" rx="108" ry="14" fill="#d04018"/>
+  <!-- soup content -->
+  <ellipse cx="160" cy="175" rx="118" ry="88" fill="url(#souG)" opacity=".9"/>
+  <!-- red oil pool -->
+  <ellipse cx="160" cy="168" rx="90" ry="62" fill="#e55010" opacity=".5" filter="url(#wc2b)"/>
+  <ellipse cx="148" cy="162" rx="60" ry="38" fill="#ff6020" opacity=".3"/>
+  <!-- tofu blocks -->
+  <g clip-path="url(#bowlClip)">
+  ${[{x:98,y:148},{x:128,y:138},{x:158,y:143},{x:186,y:150},{x:112,y:172},{x:144,y:164},{x:172,y:168},{x:138,y:192},{x:166,y:188}].map(p=>`
+    <rect x="${p.x}" y="${p.y}" width="24" height="20" rx="4" fill="#fffde7" opacity=".92"/>
+    <rect x="${p.x+1}" y="${p.y+1}" width="22" height="4" rx="2" fill="rgba(255,250,200,.4)"/>`).join('')}
+  <!-- meat bits -->
+  ${[{x:118,y:155},{x:152,y:150},{x:180,y:160},{x:132,y:180}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="8" ry="5" fill="#8b2200" opacity=".75"/>`).join('')}
+  <!-- scallion -->
+  ${[{x:148,y:158},{x:165,y:168},{x:138,y:182},{x:175,y:180}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="4" ry="2.5" fill="#4a7c2f" opacity=".9"/>`).join('')}
+  <!-- pepper flakes -->
+  ${[{x:135,y:148},{x:160,y:155},{x:148,y:172},{x:170,y:162}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="3" ry="2" fill="#c0392b" opacity=".8"/>`).join('')}
+  <!-- shine -->
+  <ellipse cx="130" cy="155" rx="18" ry="10" fill="rgba(255,200,80,.2)" transform="rotate(-20 130 155)"/>
+  </g>
+</svg>`;
+}
+
+/* ── 皮蛋瘦肉粥 ── */
+function svgCongee(){
+  return `<svg viewBox="0 0 320 330" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bowlG2" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#a08878"/><stop offset="100%" stop-color="#6a5040"/>
+    </radialGradient>
+    <radialGradient id="gruelG" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#f5f0e0"/><stop offset="100%" stop-color="#e8dfc8"/>
+    </radialGradient>
+    <filter id="wcg"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3"/></filter>
+    <clipPath id="cClip"><ellipse cx="160" cy="175" rx="115" ry="85"/></clipPath>
+  </defs>
+  <ellipse cx="160" cy="212" rx="126" ry="28" fill="#5a3828" opacity=".45"/>
+  <path d="M34 148 Q34 288 160 298 Q286 288 286 148 Z" fill="url(#bowlG2)"/>
+  <ellipse cx="160" cy="148" rx="126" ry="20" fill="#8a7060"/>
+  <ellipse cx="160" cy="148" rx="116" ry="16" fill="#a08878"/>
+  <ellipse cx="160" cy="148" rx="106" ry="12" fill="#b8a090"/>
+  <!-- gruel surface -->
+  <ellipse cx="160" cy="175" rx="115" ry="85" fill="url(#gruelG)" opacity=".95"/>
+  <g clip-path="url(#cClip)">
+  <!-- porridge texture -->
+  <ellipse cx="145" cy="168" rx="80" ry="55" fill="#f8f3e5" opacity=".5" filter="url(#wcg)"/>
+  <ellipse cx="168" cy="175" rx="65" ry="42" fill="#f5f0e2" opacity=".4" filter="url(#wcg)"/>
+  <!-- century egg pieces -->
+  ${[{x:138,y:155},{x:168,y:148},{x:155,y:175}].map(p=>`
+    <circle cx="${p.x}" cy="${p.y}" r="12" fill="#2d4a1e" opacity=".92"/>
+    <circle cx="${p.x}" cy="${p.y}" r="7" fill="#1a2e10" opacity=".8"/>
+    <circle cx="${p.x+2}" cy="${p.y-2}" r="3" fill="#2a4018" opacity=".6"/>
+    <ellipse cx="${p.x-3}" cy="${p.y+3}" rx="4" ry="3" fill="rgba(60,80,30,.3)" opacity=".6"/>`).join('')}
+  <!-- meat shreds -->
+  ${[{x:148,y:168,r:15},{x:168,y:160,r:-10},{x:140,y:182,r:5},{x:172,y:178,r:20}].map(p=>`
+    <rect x="${p.x}" y="${p.y}" width="20" height="6" rx="3" fill="#c08060" opacity=".88" transform="rotate(${p.r} ${p.x+10} ${p.y+3})"/>
+    <rect x="${p.x+2}" y="${p.y+1}" width="10" height="2" rx="1" fill="rgba(255,200,160,.4)" transform="rotate(${p.r} ${p.x+10} ${p.y+3})"/>`).join('')}
+  <!-- scallion -->
+  ${[{x:155,y:162},{x:148,y:178},{x:170,y:170}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="4" ry="2.5" fill="#538030" opacity=".85"/>`).join('')}
+  <!-- ginger -->
+  ${[{x:130,y:170},{x:182,y:168}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="6" ry="4" fill="#f5d060" opacity=".7" transform="rotate(20 ${p.x} ${p.y})"/>`).join('')}
+  <ellipse cx="135" cy="162" rx="16" ry="9" fill="rgba(255,255,220,.22)" transform="rotate(-15 135 162)"/>
+  </g>
+</svg>`;
+}
+
+/* ── 葱油拌面 ── */
+function svgNoodle(){
+  return plateSVG(`
+    <!-- noodle mound base -->
+    <ellipse cx="160" cy="175" rx="98" ry="72" fill="#e8c060" opacity=".5"/>
+    <!-- noodle strands (wavy paths) -->
+    ${[
+      {y:148,amp:6,off:0,c:'#d4a030'},{y:155,amp:8,off:1,c:'#e8b840'},
+      {y:163,amp:5,off:.5,c:'#c89020'},{y:170,amp:9,off:1.5,c:'#d4a030'},
+      {y:178,amp:6,off:.2,c:'#e0b038'},{y:186,amp:8,off:.8,c:'#c89020'},
+      {y:194,amp:5,off:1.2,c:'#d4a030'},{y:202,amp:7,off:.4,c:'#e8b840'},
+    ].map(n=>{
+      let d=`M${65+n.off*5} ${n.y}`;
+      for(let x=65;x<=255;x+=10){
+        d+=` Q${x+5} ${n.y+Math.sin((x+n.off*20)*.18)*n.amp} ${x+10} ${n.y}`;
+      }
+      return`<path d="${d}" fill="none" stroke="${n.c}" stroke-width="4.5" stroke-linecap="round" opacity=".88"/>
+        <path d="${d}" fill="none" stroke="rgba(255,240,180,.35)" stroke-width="2" stroke-linecap="round"/>`;
+    }).join('')}
+    <!-- scallion oil slick -->
+    <ellipse cx="160" cy="168" rx="75" ry="38" fill="rgba(80,140,20,.18)" opacity=".7"/>
+    <!-- charred scallion pieces -->
+    ${[{x:138,y:155},{x:155,y:162},{x:170,y:158},{x:148,y:172},{x:165,y:175},{x:138,y:180}].map(p=>`
+      <ellipse cx="${p.x}" cy="${p.y}" rx="${4+Math.random()*2}" ry="2.5" fill="#2d5a10" opacity="${.75+Math.random()*.15}"/>`).join('')}
+    <!-- sauce sheen -->
+    <ellipse cx="145" cy="162" rx="30" ry="16" fill="rgba(180,120,20,.2)" transform="rotate(-15 145 162)"/>
+    <!-- chopstick marks suggestion -->
+    <line x1="105" y1="142" x2="118" y2="208" stroke="rgba(120,80,20,.12)" stroke-width="2"/>
+  `);
+}
+
+/* ── 凉拌黄瓜 ── */
+function svgCucumber(){
+  return plateSVG(`
+    <!-- base sauce -->
+    <ellipse cx="160" cy="170" rx="100" ry="76" fill="rgba(192,57,43,.18)" opacity=".8"/>
+    <!-- cucumber slices (angled oblique pieces) -->
+    ${[
+      {x:95,y:155,r:-20},{x:118,y:142,r:12},{x:142,y:138,r:-8},
+      {x:166,y:140,r:15},{x:188,y:152,r:-18},{x:200,y:168,r:8},
+      {x:188,y:185,r:-12},{x:168,y:195,r:20},{x:142,y:198,r:-5},
+      {x:118,y:188,r:10},{x:100,y:172,r:-15}
+    ].map(p=>`
+      <g transform="rotate(${p.r} ${p.x+16} ${p.y+11})">
+        <ellipse cx="${p.x+16}" cy="${p.y+11}" rx="17" ry="11" fill="#66bb6a" opacity=".88"/>
+        <ellipse cx="${p.x+16}" cy="${p.y+11}" rx="12" ry="7" fill="#81c784" opacity=".6"/>
+        <ellipse cx="${p.x+16}" cy="${p.y+11}" rx="6" ry="4" fill="#a5d6a7" opacity=".5"/>
+        <ellipse cx="${p.x+8}" cy="${p.y+8}" rx="4" ry="2.5" fill="rgba(255,255,255,.3)"/>
+      </g>`).join('')}
+    <!-- garlic bits -->
+    ${[{x:140,y:160},{x:160,y:155},{x:175,y:168},{x:148,y:175}].map(p=>`
+      <ellipse cx="${p.x}" cy="${p.y}" rx="5" ry="4" fill="#fffde7" opacity=".85"/>
+      <ellipse cx="${p.x}" cy="${p.y}" rx="3" ry="2.5" fill="#f5f0d0" opacity=".6"/>`).join('')}
+    <!-- chili rings -->
+    ${[{x:132,y:168},{x:168,y:178},{x:155,y:185}].map(p=>`
+      <circle cx="${p.x}" cy="${p.y}" r="5" fill="none" stroke="#e53935" stroke-width="2.5" opacity=".8"/>
+      <circle cx="${p.x}" cy="${p.y}" r="1.5" fill="#e53935" opacity=".6"/>`).join('')}
+    <!-- sesame oil -->
+    <ellipse cx="155" cy="165" rx="50" ry="28" fill="rgba(180,120,20,.15)" transform="rotate(-10 155 165)"/>
+  `);
+}
+
+/* ── 蒜蓉炒青菜 ── */
+function svgGreens(){
+  return plateSVG(`
+    <!-- garlic sauce base -->
+    <ellipse cx="160" cy="168" rx="102" ry="78" fill="rgba(80,140,30,.2)" opacity=".7"/>
+    <!-- veggie leaves -->
+    ${[
+      {cx:118,cy:145,rx:28,ry:18,r:-30,c:'#388e3c'},{cx:148,cy:138,rx:30,ry:16,r:5,c:'#43a047'},
+      {cx:178,cy:142,rx:26,ry:17,r:25,c:'#2e7d32'},{cx:105,cy:168,rx:24,ry:15,r:-15,c:'#388e3c'},
+      {cx:135,cy:165,rx:32,ry:18,r:8,c:'#4caf50'},{cx:168,cy:160,rx:28,ry:16,r:-8,c:'#43a047'},
+      {cx:200,cy:165,rx:22,ry:14,r:30,c:'#2e7d32'},{cx:120,cy:188,rx:26,ry:16,r:-20,c:'#388e3c'},
+      {cx:152,cy:190,rx:30,ry:17,r:5,c:'#4caf50'},{cx:184,cy:188,rx:24,ry:15,r:18,c:'#43a047'},
+    ].map(l=>`
+      <ellipse cx="${l.cx}" cy="${l.cy}" rx="${l.rx}" ry="${l.ry}" fill="${l.c}" opacity="${.75+Math.random()*.15}" transform="rotate(${l.r} ${l.cx} ${l.cy})"/>
+      <line x1="${l.cx-l.rx*.6}" y1="${l.cy}" x2="${l.cx+l.rx*.6}" y2="${l.cy}" stroke="rgba(255,255,200,.3)" stroke-width="1.2" transform="rotate(${l.r} ${l.cx} ${l.cy})"/>`).join('')}
+    <!-- stems -->
+    ${[{x:148,y1:138,y2:200,r:-5},{x:162,y1:132,y2:198,r:3},{x:138,y1:142,y2:198,r:-12}].map(s=>`
+      <line x1="${s.x}" y1="${s.y1}" x2="${s.x+s.r*2}" y2="${s.y2}" stroke="#558b2f" stroke-width="4.5" stroke-linecap="round" opacity=".8"/>`).join('')}
+    <!-- garlic bits -->
+    ${[{x:142,y:155},{x:168,y:160},{x:155,y:175},{x:135,y:178}].map(p=>`
+      <ellipse cx="${p.x}" cy="${p.y}" rx="6" ry="5" fill="#fffde7" opacity=".88"/>
+      <ellipse cx="${p.x}" cy="${p.y}" rx="4" ry="3" fill="#f5f0d0" opacity=".6"/>`).join('')}
+    <!-- oil shimmer -->
+    <ellipse cx="150" cy="162" rx="38" ry="22" fill="rgba(200,220,80,.14)" transform="rotate(-12 150 162)"/>
+  `);
+}
+
+/* ── 扬州炒饭 ── */
+function svgFriedRice(){
+  return plateSVG(`
+    <!-- rice mound -->
+    <ellipse cx="160" cy="175" rx="98" ry="70" fill="#e8c860" opacity=".6"/>
+    <ellipse cx="158" cy="170" rx="82" ry="58" fill="#f0d070" opacity=".55"/>
+    <!-- individual rice grains (many small ellipses) -->
+    ${Array.from({length:80},(_,i)=>{
+      const a=Math.random()*Math.PI*2, r=Math.random()*70+10;
+      const x=160+Math.cos(a)*r*.95, y=170+Math.sin(a)*r*.65;
+      return`<ellipse cx="${x}" cy="${y}" rx="3.5" ry="2" fill="rgba(255,250,220,.75)" opacity="${.5+Math.random()*.4}" transform="rotate(${Math.random()*180} ${x} ${y})"/>`;
+    }).join('')}
+    <!-- egg pieces -->
+    ${[{x:130,y:150},{x:155,y:145},{x:178,y:152},{x:142,y:170},{x:168,y:168}].map(p=>`
+      <path d="M${p.x} ${p.y} Q${p.x+8} ${p.y-6} ${p.x+16} ${p.y} Q${p.x+16} ${p.y+8} ${p.x+8} ${p.y+8} Q${p.x} ${p.y+8} ${p.x} ${p.y}Z" fill="#f9e040" opacity=".88"/>`).join('')}
+    <!-- carrot bits -->
+    ${[{x:122,y:162},{x:148,y:158},{x:174,y:162},{x:135,y:182},{x:160,y:185}].map(p=>`
+      <rect x="${p.x}" y="${p.y}" width="10" height="8" rx="3" fill="#ff7043" opacity=".85"/>`).join('')}
+    <!-- peas -->
+    ${[{x:138,y:155},{x:160,y:158},{x:182,y:160},{x:148,y:175},{x:170,y:178}].map(p=>`
+      <circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#66bb6a" opacity=".88"/>
+      <circle cx="${p.x+1}" cy="${p.y-1}" r="2" fill="rgba(255,255,255,.25)"/>`).join('')}
+    <!-- ham bits -->
+    ${[{x:128,y:172},{x:155,y:165},{x:178,y:170}].map(p=>`
+      <rect x="${p.x}" y="${p.y}" width="12" height="9" rx="3" fill="#e57373" opacity=".8"/>`).join('')}
+    <!-- oil shimmer -->
+    <ellipse cx="148" cy="162" rx="40" ry="22" fill="rgba(255,220,80,.18)" transform="rotate(-18 148 162)"/>
+  `);
+}
+
+/* ── 葱油拌面 cover version already done, re-use for index ── */
+/* ── 蛋花汤 ── */
+function svgEggSoup(){
+  return `<svg viewBox="0 0 320 330" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bG3" cx="50%" cy="38%" r="58%">
+      <stop offset="0%" stop-color="#8db0c8"/><stop offset="100%" stop-color="#3a6888"/>
+    </radialGradient>
+    <radialGradient id="souG3" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#ffe8a0"/><stop offset="100%" stop-color="#e8c060"/>
+    </radialGradient>
+    <filter id="wcsoup"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5"/></filter>
+    <clipPath id="soupClip"><ellipse cx="160" cy="175" rx="116" ry="86"/></clipPath>
+  </defs>
+  <ellipse cx="160" cy="210" rx="126" ry="28" fill="#2a5068" opacity=".45"/>
+  <path d="M34 148 Q34 290 160 300 Q286 290 286 148Z" fill="url(#bG3)"/>
+  <ellipse cx="160" cy="148" rx="126" ry="20" fill="#6898b8"/>
+  <ellipse cx="160" cy="148" rx="116" ry="16" fill="#78aac8"/>
+  <ellipse cx="160" cy="148" rx="106" ry="12" fill="#8ab8d0"/>
+  <ellipse cx="160" cy="175" rx="116" ry="86" fill="url(#souG3)" opacity=".9"/>
+  <g clip-path="url(#soupClip)">
+  <!-- egg flower ribbons -->
+  <path d="M90 155 Q110 148 130 158 Q150 168 140 180 Q128 190 108 182 Q88 172 90 155Z" fill="#fff9c4" opacity=".88" filter="url(#wcsoup)"/>
+  <path d="M148 148 Q168 140 185 152 Q198 164 190 178 Q178 188 162 180 Q146 170 148 148Z" fill="#fce838" opacity=".85" filter="url(#wcsoup)"/>
+  <path d="M118 178 Q135 172 148 182 Q156 194 144 202 Q130 208 118 198 Q108 188 118 178Z" fill="#f9df30" opacity=".80" filter="url(#wcsoup)"/>
+  <path d="M172 172 Q186 165 196 176 Q202 188 192 196 Q180 202 170 192 Q162 182 172 172Z" fill="#fff59d" opacity=".78" filter="url(#wcsoup)"/>
+  <!-- tomato bits -->
+  ${[{x:102,y:162},{x:195,y:165},{x:148,y:195}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="8" ry="6" fill="#e53935" opacity=".6"/>`).join('')}
+  <!-- scallion -->
+  ${[{x:140,y:158},{x:165,y:162},{x:150,y:180},{x:175,y:175}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="4" ry="2.5" fill="#538030" opacity=".85"/>`).join('')}
+  <ellipse cx="130" cy="158" rx="22" ry="12" fill="rgba(255,250,200,.2)" transform="rotate(-18 130 158)"/>
+  </g>
+</svg>`;
+}
+
+/* ── 酸辣汤 ── */
+function svgHotSour(){
+  return `<svg viewBox="0 0 320 330" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bG4" cx="50%" cy="38%" r="58%">
+      <stop offset="0%" stop-color="#a05030"/><stop offset="100%" stop-color="#5a2010"/>
+    </radialGradient>
+    <radialGradient id="soupG4" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#d06030"/><stop offset="100%" stop-color="#a03818"/>
+    </radialGradient>
+    <filter id="wchs"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4"/></filter>
+    <clipPath id="hsClip"><ellipse cx="160" cy="175" rx="116" ry="86"/></clipPath>
+  </defs>
+  <ellipse cx="160" cy="210" rx="126" ry="28" fill="#3a1a08" opacity=".45"/>
+  <path d="M34 148 Q34 290 160 300 Q286 290 286 148Z" fill="url(#bG4)"/>
+  <ellipse cx="160" cy="148" rx="126" ry="20" fill="#885030"/>
+  <ellipse cx="160" cy="148" rx="116" ry="16" fill="#9a6040"/>
+  <ellipse cx="160" cy="148" rx="106" ry="12" fill="#b07050"/>
+  <ellipse cx="160" cy="175" rx="116" ry="86" fill="url(#soupG4)" opacity=".9"/>
+  <g clip-path="url(#hsClip)">
+  <!-- egg ribbons -->
+  <path d="M95 158 Q115 150 132 162 Q144 175 132 186 Q118 196 100 186 Q84 175 95 158Z" fill="#fff59d" opacity=".82" filter="url(#wchs)"/>
+  <path d="M155 150 Q172 142 185 155 Q194 168 184 180 Q172 190 158 180 Q144 168 155 150Z" fill="#fce838" opacity=".78" filter="url(#wchs)"/>
+  <!-- tofu shreds -->
+  ${[{x:118,y:162,r:15},{x:148,y:158,r:-8},{x:172,y:168,r:20},{x:140,y:182,r:5},{x:168,y:185,r:-12}].map(p=>`
+    <rect x="${p.x}" y="${p.y}" width="22" height="6" rx="3" fill="rgba(255,250,235,.8)" opacity=".88" transform="rotate(${p.r} ${p.x+11} ${p.y+3})"/>`).join('')}
+  <!-- mushroom pieces -->
+  ${[{x:130,y:170},{x:158,y:165},{x:182,y:174}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="10" ry="7" fill="#6d4c41" opacity=".82"/>
+    <ellipse cx="${p.x}" cy="${p.y}" rx="6" ry="4" fill="#4e342e" opacity=".6"/>`).join('')}
+  <!-- scallion -->
+  ${[{x:145,y:162},{x:165,y:172},{x:148,y:182}].map(p=>`
+    <ellipse cx="${p.x}" cy="${p.y}" rx="4" ry="2.5" fill="#538030" opacity=".85"/>`).join('')}
+  <!-- pepper oil -->
+  <ellipse cx="155" cy="165" rx="45" ry="28" fill="rgba(220,60,20,.2)" transform="rotate(-10 155 165)"/>
+  </g>
+</svg>`;
+}
+
+/* ── 蒜泥白肉 ── */
+function svgWhiteMeat(){
+  return plateSVG(`
+    <!-- cucumber shreds base -->
+    <ellipse cx="160" cy="195" rx="95" ry="20" fill="#66bb6a" opacity=".45"/>
+    <!-- meat slices -->
+    ${[
+      {y:148,w:115,r:-3,o:.92},{y:158,w:108,r:2,o:.88},{y:168,w:112,r:-2,o:.85},
+      {y:178,w:106,r:3,o:.82},{y:188,w:100,r:-1,o:.78},
+    ].map((s,i)=>`
+      <g transform="rotate(${s.r} 160 ${s.y+6})">
+        <rect x="${160-s.w/2}" y="${s.y}" width="${s.w}" height="12" rx="5"
+          fill="url(#mtGrad)" opacity="${s.o}"/>
+        <rect x="${160-s.w/2+5}" y="${s.y+2}" width="${s.w*.35}" height="4" rx="2"
+          fill="rgba(255,230,200,.45)"/>
+        <rect x="${160-s.w/2+5}" y="${s.y+2}" width="2" height="8" rx="1"
+          fill="rgba(180,120,80,.3)"/>
+      </g>`).join('')}
+    <!-- garlic sauce drizzle -->
+    <path d="M110 148 Q160 165 210 148" fill="none" stroke="rgba(192,57,43,.5)" stroke-width="6" stroke-linecap="round" opacity=".6"/>
+    <path d="M115 160 Q160 175 205 160" fill="none" stroke="rgba(192,57,43,.4)" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <!-- scallion garnish -->
+    ${[{x:138,y:148},{x:155,y:152},{x:170,y:148},{x:148,y:158},{x:165,y:155}].map(p=>`
+      <ellipse cx="${p.x}" cy="${p.y}" rx="4" ry="2.5" fill="#4a7c2f" opacity=".85"/>`).join('')}
+    <!-- sesame seeds -->
+    ${[{x:135,y:155},{x:148,y:162},{x:162,y:158},{x:175,y:162},{x:155,y:170}].map(p=>`
+      <ellipse cx="${p.x}" cy="${p.y}" rx="2.5" ry="1.8" fill="#f5e8c0" opacity=".7" transform="rotate(${Math.random()*60-30} ${p.x} ${p.y})"/>`).join('')}
+    <defs>
+      <linearGradient id="mtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#f5e8d0"/><stop offset="40%" stop-color="#e8d0b0"/><stop offset="100%" stop-color="#d8c0a0"/>
+      </linearGradient>
+    </defs>
+  `);
+}
+
+/* ══════════════════════════════════════
+   RECIPE DATA
+══════════════════════════════════════ */
+const RECIPES = [
+  {name:"番茄炒鸡蛋",cat:"家常热菜",time:"10分钟",diff:"简单",flavor:"酸甜咸",svgFn:svgTomato,
+   ingredients:["西红柿 2个","鸡蛋 3颗","盐 适量","白糖 少许","葱花 适量","食用油 适量"],
+   steps:["鸡蛋打散加少许盐搅匀，西红柿切块。","热锅热油，倒蛋液，轻推至半熟蓬松，盛出备用。","爆香葱花，倒番茄翻炒出汁，加盐和少许糖。","倒入鸡蛋，翻炒均匀，出锅。"],
+   tip:"鸡蛋半熟时盛出，最后一起炒才嫩！"},
+  {name:"红烧肉",cat:"家常热菜",time:"90分钟",diff:"中等",flavor:"咸甜",svgFn:svgBraisedPork,
+   ingredients:["五花肉 500g","生抽 3勺","老抽 1勺","冰糖 30g","料酒 2勺","葱姜 适量","八角 2颗","桂皮 1段"],
+   steps:["五花肉切块，冷水焯水撇浮沫，捞出沥干。","小火炒冰糖至琥珀色，下肉块快速翻炒上色。","加葱姜、八角、桂皮、生抽老抽翻炒。","加热水没过肉，大火烧开转小火焖60分钟。","大火收汁至浓稠，出锅。"],
+   tip:"炒糖色要有耐心，糖色是关键！焖时不揭盖。"},
+  {name:"宫保鸡丁",cat:"家常热菜",time:"25分钟",diff:"中等",flavor:"麻辣鲜香",svgFn:svgGongbao,
+   ingredients:["鸡胸肉 300g","干辣椒 10根","花生米 80g","葱白 3段","生抽 2勺","醋 1勺","糖 1勺","淀粉 1勺","花椒 适量"],
+   steps:["鸡肉切丁，用生抽淀粉腌10分钟。","调碗汁：生抽醋糖淀粉少许盐。","花椒炒香，加辣椒小火炒红油。","下鸡丁炒变色，加葱白，淋碗汁。","翻匀后放花生米出锅。"],
+   tip:"花生提前烤脆，出锅前加才酥！"},
+  {name:"麻婆豆腐",cat:"家常热菜",time:"20分钟",diff:"中等",flavor:"麻辣鲜香",svgFn:svgMapo,
+   ingredients:["嫩豆腐 1盒","猪肉末 80g","豆瓣酱 1.5勺","蒜末","姜末","花椒粉 1茶匙","生抽 1勺","淀粉 适量","葱花 适量"],
+   steps:["豆腐切块焯水，沥干备用。","炒散肉末，加豆瓣酱炒红油。","加蒜姜炒香，加水烧开。","下豆腐轻推匀，加生抽，小火烧3分钟。","分两次勾芡，撒葱花和花椒粉。"],
+   tip:"豆腐焯水去腥，花椒粉出锅后撒最香！"},
+  {name:"蒜蓉炒青菜",cat:"家常热菜",time:"8分钟",diff:"简单",flavor:"清淡",svgFn:svgGreens,
+   ingredients:["小白菜/油麦菜 400g","大蒜 4瓣","盐 适量","食用油 适量","蚝油 1勺（可选）"],
+   steps:["蔬菜洗净，大蒜剁末。","油锅七成热，爆香蒜末约15秒。","下蔬菜大火翻炒加盐，炒至断生。","可加蚝油提鲜，出锅装盘。"],
+   tip:"大火快炒保持翠绿！出水多的菜先焯水。"},
+  {name:"凉拌黄瓜",cat:"凉拌",time:"10分钟",diff:"简单",flavor:"酸辣爽口",svgFn:svgCucumber,
+   ingredients:["黄瓜 2根","大蒜 3瓣","小米辣 2根","醋 2勺","生抽 1勺","盐 适量","香油 1勺","白糖 少许"],
+   steps:["黄瓜用擀面杖拍裂，切小段，加盐腌5分钟倒去水分。","蒜剁末，小米辣切圈。","调汁：醋生抽糖香油加蒜末辣椒。","淋汁拌匀，冷藏10分钟更入味。"],
+   tip:"拍黄瓜比切更入味，先腌出水再倒掉让口感更脆！"},
+  {name:"扬州炒饭",cat:"主食",time:"15分钟",diff:"简单",flavor:"鲜香",svgFn:svgFriedRice,
+   ingredients:["隔夜米饭 2碗","鸡蛋 2颗","火腿 80g","豌豆 40g","胡萝卜 半根","葱花 适量","盐 适量","生抽 1勺"],
+   steps:["米饭打散，胡萝卜火腿切丁，豌豆解冻。","炒散鸡蛋成小块，盛出。","爆香葱花，炒胡萝卜火腿丁2分钟。","加米饭大火翻炒，压散炒透。","加鸡蛋豌豆，调盐生抽，翻匀。"],
+   tip:"隔夜米饭含水量低，炒出粒粒分明！全程大火。"},
+  {name:"葱油拌面",cat:"主食",time:"20分钟",diff:"简单",flavor:"香浓咸鲜",svgFn:svgNoodle,
+   ingredients:["细面条 200g","香葱 1把","生抽 3勺","老抽 1勺","白糖 1勺","食用油 80ml"],
+   steps:["香葱切葱白和葱绿。","冷油下葱白小火炸至金黄，加葱绿炸30秒，捞出。","葱油中加生抽老抽糖，小火加热搅匀。","面条煮熟，趁热淋葱油汁拌匀。"],
+   tip:"面条过冰水更Q弹，加个溏心蛋更完美！"},
+  {name:"皮蛋瘦肉粥",cat:"汤粥",time:"60分钟",diff:"中等",flavor:"鲜咸",svgFn:svgCongee,
+   ingredients:["大米 100g","瘦肉 150g","皮蛋 2颗","生姜 3片","盐 适量","白胡椒 少许","香油 几滴","香葱 适量"],
+   steps:["大米用油盐腌10分钟，瘦肉切丝腌制。","皮蛋切块，姜切丝。","水烧开下米，大火烧开转小火熬40分钟。","加姜丝皮蛋再熬5分钟，大火下肉丝搅散。","加盐白胡椒，滴香油，撒葱花。"],
+   tip:"米提前用油盐腌制让粥更滑！皮蛋用麻油腌去碱味。"},
+  {name:"蛋花汤",cat:"汤粥",time:"10分钟",diff:"简单",flavor:"清鲜",svgFn:svgEggSoup,
+   ingredients:["鸡蛋 2颗","番茄 1个","盐 适量","香油 几滴","葱花 适量","淀粉 1勺"],
+   steps:["蛋打散，淀粉加水调成水淀粉。","水烧开，加番茄块煮2分钟。","加盐，倒水淀粉勾芡稍稠。","关小火，画圈淋蛋液搅出蛋花。","滴香油，撒葱花。"],
+   tip:"水不沸腾时淋蛋液，蛋花才轻盈！先勾芡再下蛋。"},
+  {name:"酸辣汤",cat:"汤粥",time:"20分钟",diff:"简单",flavor:"酸辣开胃",svgFn:svgHotSour,
+   ingredients:["木耳 30g（泡发）","豆腐 半块","鸡蛋 2颗","淀粉 2勺","醋 3勺","白胡椒 1茶匙","生抽 2勺","香油 1勺"],
+   steps:["木耳切丝，豆腐切丝，蛋打散。","高汤烧开，放木耳丝豆腐丝。","加生抽盐调味，倒水淀粉勾芡。","淋蛋液搅出蛋花，加醋和白胡椒。","出锅滴香油。"],
+   tip:"醋出锅前加，久煮酸味跑掉！白胡椒是灵魂要放够。"},
+  {name:"蒜泥白肉",cat:"凉拌",time:"35分钟",diff:"中等",flavor:"蒜香浓郁",svgFn:svgWhiteMeat,
+   ingredients:["五花肉 300g","大蒜 6瓣","生抽 2勺","香醋 1勺","辣椒油 1勺","白糖 少许","香油 1勺","葱姜 适量"],
+   steps:["五花肉整块冷水下锅，加葱姜料酒，煮25分钟。","捞出放冰水浸10分钟，取出切薄片。","大蒜捣成泥，加盐研匀。","调汁：蒜泥生抽醋辣椒油糖香油。","肉片摆盘，淋蒜泥汁。"],
+   tip:"冰水急冷肉质更紧实，切片更薄！蒜泥要现捣才香。"},
+];
+
+/* ══════════════════════════════════════
+   BUILD PAGES
+══════════════════════════════════════ */
+let currentPage = 0;
+const totalPages = RECIPES.length + 1; // 0 = cover
+
+function buildCoverPage(){
+  const div = document.createElement('div');
+  div.className = 'page cover-page active';
+  div.dataset.page = '0';
+  div.innerHTML = `
+    <div class="page-left-half">
+      <div class="cover-illus-bg">
+        <!-- Decorative circular arrangement of SVG food icons -->
+        <svg viewBox="0 0 320 320" style="width:85%;height:85%">
+          <defs>
+            <radialGradient id="bgG" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(255,200,80,.12)"/>
+              <stop offset="100%" stop-color="rgba(255,200,80,.0)"/>
+            </radialGradient>
+          </defs>
+          <!-- Decorative ring -->
+          <circle cx="160" cy="160" r="130" fill="url(#bgG)"/>
+          <circle cx="160" cy="160" r="130" fill="none" stroke="rgba(255,200,80,.2)" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <circle cx="160" cy="160" r="100" fill="none" stroke="rgba(255,200,80,.12)" stroke-width="1" stroke-dasharray="3 5"/>
+          <!-- Central text decoration -->
+          <text x="160" y="148" text-anchor="middle" fill="rgba(255,220,120,.7)" font-size="36" font-family="STSong,serif">食</text>
+          <text x="160" y="192" text-anchor="middle" fill="rgba(255,220,120,.7)" font-size="36" font-family="STSong,serif">谱</text>
+          <!-- Surrounding dots -->
+          ${Array.from({length:16},(_,i)=>{
+            const a=i/16*Math.PI*2;
+            return`<circle cx="${160+Math.cos(a)*128}" cy="${160+Math.sin(a)*128}" r="4" fill="rgba(255,200,80,.35)"/>`;
+          }).join('')}
+          ${Array.from({length:8},(_,i)=>{
+            const a=i/8*Math.PI*2;
+            return`<circle cx="${160+Math.cos(a)*112}" cy="${160+Math.sin(a)*112}" r="6" fill="rgba(255,180,60,.2)"/>`;
+          }).join('')}
+          <!-- chopsticks decoration -->
+          <line x1="80" y1="60" x2="130" y2="260" stroke="rgba(220,180,80,.5)" stroke-width="6" stroke-linecap="round"/>
+          <line x1="88" y1="58" x2="140" y2="258" stroke="rgba(220,180,80,.35)" stroke-width="4" stroke-linecap="round"/>
+          <line x1="240" y1="60" x2="190" y2="260" stroke="rgba(220,180,80,.5)" stroke-width="6" stroke-linecap="round"/>
+          <line x1="232" y1="58" x2="180" y2="258" stroke="rgba(220,180,80,.35)" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="page-right-half">
+      <div class="cover-title-cn">异乡厨房</div>
+      <div class="cover-title-sub">中餐家常食谱</div>
+      <svg class="cover-ornament" viewBox="0 0 200 20" height="20">
+        <line x1="0" y1="10" x2="70" y2="10" stroke="rgba(240,192,96,.4)" stroke-width="1.5"/>
+        <circle cx="100" cy="10" r="5" fill="rgba(240,192,96,.4)"/>
+        <circle cx="88" cy="10" r="3" fill="rgba(240,192,96,.3)"/>
+        <circle cx="112" cy="10" r="3" fill="rgba(240,192,96,.3)"/>
+        <line x1="130" y1="10" x2="200" y2="10" stroke="rgba(240,192,96,.4)" stroke-width="1.5"/>
+      </svg>
+      <div class="cover-desc">
+        献给每一位身在异乡<br>心中仍记挂着家乡味道<br>的游子们<br><br>
+        十二道家常菜<br>从番茄炒鸡蛋到红烧肉<br>从皮蛋瘦肉粥到葱油拌面<br><br>
+        无论身在何处<br>这里都有你熟悉的味道
+      </div>
+      <button class="cover-btn" onclick="turnPage(1)">翻开食谱 ›</button>
+    </div>`;
+  return div;
+}
+
+function buildRecipePage(recipe, pageIdx){
+  const div = document.createElement('div');
+  div.className = 'page';
+  div.dataset.page = pageIdx;
+  const stepId = `steps-${pageIdx}`;
+  div.innerHTML = `
+    <div class="page-left-half">
+      <div class="illus-wrap">${recipe.svgFn()}</div>
+      <span class="page-num-stamp pn-left">${pageIdx * 2 - 1}</span>
+    </div>
+    <div class="page-right-half">
+      <div class="recipe-dish-name">${recipe.name}</div>
+      <span class="recipe-category-tag">${recipe.cat}</span>
+      <div class="recipe-divider"></div>
+      <div class="recipe-meta-row">
+        <span class="meta-tag">⏱ ${recipe.time}</span>
+        <span class="meta-tag">📊 ${recipe.diff}</span>
+        <span class="meta-tag">🏷 ${recipe.flavor}</span>
+      </div>
+      <div class="section-label">🛒 食材</div>
+      <div class="ing-chips">${recipe.ingredients.map(i=>`<span class="ing-chip">${i}</span>`).join('')}</div>
+      <div class="section-label">👨‍🍳 步骤</div>
+      <div class="prog-wrap"><div class="prog-fill" id="prog-${pageIdx}" style="width:0%"></div></div>
+      <ul class="steps-list" id="${stepId}">${recipe.steps.map((s,i)=>`
+        <li onclick="toggleStep(${pageIdx},${i})">
+          <span class="step-circle">${i+1}</span>
+          <span>${s}</span>
+        </li>`).join('')}</ul>
+      <div class="tip-block"><span class="tip-label">💡 小贴士</span>${recipe.tip}</div>
+      <span class="page-num-stamp pn-right">${pageIdx * 2}</span>
+    </div>`;
+  return div;
+}
+
+/* ── Init pages ── */
+const container = document.getElementById('pagesContainer');
+container.appendChild(buildCoverPage());
+RECIPES.forEach((r,i)=>container.appendChild(buildRecipePage(r,i+1)));
+
+/* ── TOC ── */
+const tocList = document.getElementById('tocList');
+RECIPES.forEach((r,i)=>{
+  const el = document.createElement('div');
+  el.className='toc-item';
+  el.innerHTML=`<div class="toc-num">${i+1}</div><div class="toc-name">${r.name}</div><div class="toc-meta">${r.cat} · ${r.time}</div>`;
+  el.onclick=()=>{goToPage(i+1);closeToc();};
+  tocList.appendChild(el);
+});
+
+/* ══════════════════════════════════════
+   STEP TRACKING
+══════════════════════════════════════ */
+const stepsDone = {};
+function toggleStep(pageIdx, stepIdx){
+  if(!stepsDone[pageIdx]) stepsDone[pageIdx]=new Array(RECIPES[pageIdx-1].steps.length).fill(false);
+  stepsDone[pageIdx][stepIdx]=!stepsDone[pageIdx][stepIdx];
+  const ul=document.getElementById(`steps-${pageIdx}`);
+  if(!ul)return;
+  ul.querySelectorAll('li')[stepIdx].classList.toggle('done',stepsDone[pageIdx][stepIdx]);
+  ul.querySelectorAll('li')[stepIdx].querySelector('.step-circle').textContent=stepsDone[pageIdx][stepIdx]?'✓':(stepIdx+1);
+  const done=stepsDone[pageIdx].filter(Boolean).length, total=stepsDone[pageIdx].length;
+  const bar=document.getElementById(`prog-${pageIdx}`);
+  if(bar) bar.style.width=`${done/total*100}%`;
+  if(done===total) showToast('🎉 '+RECIPES[pageIdx-1].name+' 大功告成！');
+  else showToast(`已完成 ${done}/${total} 步`);
+}
+
+/* ══════════════════════════════════════
+   PAGE TURNING
+══════════════════════════════════════ */
+function turnPage(dir){
+  const next=currentPage+dir;
+  if(next<0||next>=totalPages) return;
+  goToPage(next,dir);
+}
+
+function goToPage(target, dir=1){
+  if(target===currentPage) return;
+  const pages=container.querySelectorAll('.page');
+  const curEl=pages[currentPage], nextEl=pages[target];
+  dir = target > currentPage ? 1 : -1;
+
+  curEl.classList.remove('active');
+  curEl.classList.add(dir>0?'flip-out':'flip-back-out');
+  nextEl.style.opacity='0';
+  nextEl.classList.add(dir>0?'flip-in':'flip-back-in');
+
+  setTimeout(()=>{
+    curEl.classList.remove('flip-out','flip-back-out');
+    nextEl.classList.remove('flip-in','flip-back-in');
+    nextEl.classList.add('active');
+    nextEl.style.opacity='';
+    currentPage=target;
+    updateNav();
+  },550);
+}
+
+function updateNav(){
+  document.getElementById('btnPrev').disabled=currentPage===0;
+  document.getElementById('btnNext').disabled=currentPage===totalPages-1;
+  document.getElementById('pageIndicator').textContent=
+    currentPage===0?'封面':`第 ${currentPage} / ${RECIPES.length} 道`;
+}
+
+/* ═══ TOC ═══ */
+function openToc(){document.getElementById('tocOverlay').classList.add('open');}
+function closeToc(){document.getElementById('tocOverlay').classList.remove('open');}
+function handleTocBg(e){if(e.target===document.getElementById('tocOverlay'))closeToc();}
+
+/* ═══ TOAST ═══ */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ═══ KEYBOARD ═══ */
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') turnPage(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') turnPage(-1);
+});
+
+/* ═══ TOUCH SWIPE ═══ */
+let tx=0;
+document.getElementById('bookShell').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+document.getElementById('bookShell').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>40) turnPage(dx<0?1:-1);
+},{passive:true});
+
+updateNav();
+</script>
+</body>
+</html>

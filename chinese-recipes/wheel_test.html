@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="c" width="400" height="400" style="border:1px solid #ccc;background:#eee;"></canvas>
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = 400, cx = W/2, cy = W/2, r = W/2 - 10;
+const dishes = ['番茄炒蛋','葱油拌面','白菜猪肉饺子','南瓜小米粥','麻婆豆腐','红烧肉','宫保鸡丁','酸辣土豆丝','可乐鸡翅','鱼香肉丝'];
+const n = dishes.length;
+const sliceDeg = 360 / n;
+const COLORS = ['#F4B183','#F9D58B','#B9D98C','#9CC9C2','#E8A0A0'];
+const wheelAngle = 0;
+
+for (let i = 0; i < n; i++) {
+  const startDeg = i * sliceDeg + wheelAngle - 90;
+  const endDeg   = startDeg + sliceDeg;
+  const startRad = startDeg * Math.PI / 180;
+  const endRad   = endDeg   * Math.PI / 180;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, startRad, endRad);
+  ctx.closePath();
+  ctx.fillStyle = COLORS[i % COLORS.length];
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw midpoint radius line to see where it is
+  const midDeg = startDeg + sliceDeg / 2;
+  const midRad = midDeg * Math.PI / 180;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(midRad)*r, cy + Math.sin(midRad)*r);
+  ctx.stroke();
+  ctx.restore();
+
+  // === TEXT: draw chars along the mid-radius ===
+  const fontSize = 13;
+  const lineH = fontSize + 3;
+  const chars = dishes[i].split('');
+  const totalH = chars.length * lineH;
+  const rInner = r * 0.15;
+  const rOuter = r * 0.94;
+  const bandMid = (rInner + rOuter) / 2;
+  const rStart = bandMid + (totalH - lineH) / 2;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(midRad);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold ${fontSize}px serif`;
+  ctx.fillStyle = '#3A2818';
+
+  for (let c = 0; c < chars.length; c++) {
+    const dist = rStart - c * lineH;
+    ctx.fillText(chars[c], 0, -dist);
+  }
+  ctx.restore();
+}
+
+// Center dot
+ctx.beginPath();
+ctx.arc(cx, cy, 10, 0, Math.PI*2);
+ctx.fillStyle = '#fff';
+ctx.fill();
+
+// Debug: draw circles at r*0.15 and r*0.94
+ctx.beginPath(); ctx.arc(cx,cy,r*0.15,0,Math.PI*2); ctx.strokeStyle='red'; ctx.lineWidth=1; ctx.stroke();
+ctx.beginPath(); ctx.arc(cx,cy,r*0.94,0,Math.PI*2); ctx.strokeStyle='blue'; ctx.lineWidth=1; ctx.stroke();
+ctx.beginPath(); ctx.arc(cx,cy,(r*0.15+r*0.94)/2,0,Math.PI*2); ctx.strokeStyle='green'; ctx.lineWidth=1; ctx.stroke();
+
+console.log('r=',r,'bandMid=',(r*0.15+r*0.94)/2);
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html><body style="background:#222;padding:20px;">
+<canvas id="c" width="300" height="300"></canvas>
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = 300, cx = W/2, cy = W/2, r = W/2 - 2; // r=148
+const dishes = ['番茄炒蛋','葱油拌面','白菜猪肉饺子','南瓜小米粥','麻婆豆腐','红烧肉','宫保鸡丁','酸辣土豆丝','可乐鸡翅','鱼香肉丝'];
+const COLORS = ['#F4B183','#F9D58B','#B9D98C','#9CC9C2','#E8A0A0'];
+const n = dishes.length;
+const sliceDeg = 360/n;
+const wheelAngle = 0;
+
+for(let i=0;i<n;i++){
+  const startDeg = i*sliceDeg+wheelAngle-90;
+  const endDeg = startDeg+sliceDeg;
+  const startRad = startDeg*Math.PI/180;
+  const endRad = endDeg*Math.PI/180;
+
+  ctx.beginPath(); ctx.moveTo(cx,cy);
+  ctx.arc(cx,cy,r,startRad,endRad); ctx.closePath();
+  ctx.fillStyle=COLORS[i%COLORS.length]; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+
+  const midDeg=startDeg+sliceDeg/2;
+  const midRad=midDeg*Math.PI/180;
+  const fontSize=13, lineH=fontSize+3;
+  const chars=dishes[i].split('');
+  const totalH=chars.length*lineH;
+  const rInner=r*0.15, rOuter=r*0.94;
+  const bandMid=(rInner+rOuter)/2;
+  const rStart=bandMid+(totalH-lineH)/2;
+
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(midRad);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='bold 13px serif'; ctx.fillStyle='#000';
+  for(let c=0;c<chars.length;c++){
+    const dist=rStart-c*lineH;
+    ctx.fillText(chars[c],0,-dist);
+  }
+  ctx.restore();
+}
+ctx.beginPath(); ctx.arc(cx,cy,10,0,Math.PI*2);
+ctx.fillStyle='#fff'; ctx.fill();
+</script>
+</body></html>
